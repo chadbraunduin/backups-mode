@@ -8,12 +8,11 @@
 (defvar last-modified-date-command-function 'nix-last-modified-date-command) ;; platform specific way of getting last modified date
 (defvar unknown-last-modified-date "stat:") ;; platform specific output for unknown last modified date
 
-(defvar emacs-directory (or emacs-directory "~/.emacs.d/"))
-
 (global-set-key "\C-c\C-v" 'save-version)
 (global-set-key "\C-c\C-b" 'list-backups)
 
 ;; where do backups and autosaves get saved to
+(defvar emacs-directory (or emacs-directory "~/.emacs.d/"))
 (defvar backup-directory (concat emacs-directory "backups/"))
 (make-directory backup-directory t)
 (setq backup-directory-alist `((".*" . ,backup-directory)))
@@ -173,9 +172,8 @@
 
 (defun save-version ()
   (interactive)
-  (save-buffer)
   (set-buffer-modified-p t)
-  (save-buffer 16))
+  (save-buffer 16)) ;; archive a copy of the previous version)
 
 (defun next-line-at-beginning ()
   (interactive)
@@ -207,6 +205,7 @@
 	     ;; using a temp file is necessary since saving the buffer may delete the backup file before it can be restored
 	     (copy-file backup-file-name temp-backup-file-name)
 	     (switch-to-buffer buffer-name)
+	     (save-buffer) ;; first, save the buffer. This is so the current changes become a saved version
 	     (save-version) ;; save a version of the current buffer
 	     (kill-buffer) ;; kill the original buffer
 	     (copy-file temp-backup-file-name file-name t) ;; move the temp file to become the current file
