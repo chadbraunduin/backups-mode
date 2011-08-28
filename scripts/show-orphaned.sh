@@ -1,6 +1,7 @@
 #!/bin/bash
 
-cd /home/chadbraunduin/.emacs.d/backups
+backups_directory="/home/chadbraunduin/.emacs.d/backups"
+cd "$backups_directory"
 for backup in *.*~
 do
     orig_file=$backup
@@ -9,6 +10,6 @@ do
     orig_file="${orig_file/%[~]/}"
     if [ ! -f $orig_file ]
     then
-	echo "$backup"
+			echo "$backups_directory/$backup"
     fi
 done

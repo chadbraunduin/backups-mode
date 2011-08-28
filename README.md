@@ -79,11 +79,12 @@ The problem with creating N backup files per file is that over time you'll have 
 ### For local files
 For local files, I've created the script "show-orphaned.sh" (found in the scripts directory). It goes through my backups directory and displays all orphaned backups. I've created a @daily crontab job to remove all of the orphaned backups.
 
-    @daily /home/chadbraunduin/.emacs.d/backups/show-orphaned.sh | xargs rm -f
+    @daily /home/chadbraunduin/.emacs.d/backups/show-orphaned.sh | xargs -r /bin/rm -f
+    
 ### For tramp files
 For tramp files, we cannot assume to be able to access the original file. Therefore, I've taken a more crude approach with tramp backups. I've scheduled a @daily crontab job that removes any tramp backups that have not be accessed in the past 180 days (roughly 6 months).
 
-    @daily find /home/chadbraunduin/.emacs.d/tramp-backups/ -type f -name "*.*~" -atime +180 | xargs rm -f
+    @daily find /home/chadbraunduin/.emacs.d/tramp-backups/ -type f -name "*.*~" -atime +180 | xargs -r /bin/rm -f
 
 ## rsnapshot configuration
 I use rsnapshot for rsync backups to an external drive. I've decided I do not care to backup these emacs generated backup files. Therefore, I've added these two lines to /etc/rsnapshot.conf:
