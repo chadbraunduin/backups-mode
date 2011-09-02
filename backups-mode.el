@@ -10,6 +10,7 @@
 
 (global-set-key "\C-cv" 'save-version)
 (global-set-key "\C-cb" 'list-backups)
+(global-set-key "\C-ck" 'kill-buffer-without-saving)
 
 ;; where do backups and autosaves get saved to
 (defvar emacs-directory (or emacs-directory "~/.emacs.d/"))
