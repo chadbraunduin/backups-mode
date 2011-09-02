@@ -104,8 +104,7 @@ I use rsnapshot for rsync backups to an external drive. I've decided I do not ca
     exclude		/home/chadbraunduin/.emacs.d/tramp-backups/*.*~
 
 ## Bugs and TODOs
-As with most projects, this is still a work in progress. Two of the known issues are:
+As with most projects, this is still a work in progress. The known issues are:
 
-* The key bindings for save-version and list-backups do not work after you open a file using tramp. If anyone has an answer for this, please let me know.
 * I have not tested it in Windows, yet. I believe configuration changes will be necessary to make it work in that environment. Since I only use emacs in Linux, this is not a personal priority for me.
 
