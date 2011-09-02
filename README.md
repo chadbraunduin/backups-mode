@@ -50,6 +50,7 @@ By default, backups are saved to "~/.emacs.d/backups" and tramp file backups are
 
 ### My .emacs
 As an example, here's the configuration from my .emacs file.
+
     (require 'backups-mode)
     (setq kept-new-versions 7
           kept-old-versions 3)
