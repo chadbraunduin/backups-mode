@@ -10,7 +10,7 @@
 
 (global-set-key "\C-cv" 'save-version)
 (global-set-key "\C-cb" 'list-backups)
-(global-set-key "\C-ck" 'kill-buffer-without-saving)
+(global-set-key "\C-ck" 'kill-buffer-prompt)
 
 ;; where do backups and autosaves get saved to
 (defvar emacs-directory (or emacs-directory "~/.emacs.d/"))
@@ -43,6 +43,13 @@
   (save-some-buffers t)
   ad-do-it)
 (ad-activate 'save-buffers-kill-emacs)
+
+(defun kill-buffer-prompt ()
+  (interactive)
+  (if (and (buffer-modified-p) (buffer-file-name) (file-exists-p (buffer-file-name)) (y-or-n-p "Save buffer?"))
+      (save-buffer)
+    (set-buffer-modified-p nil))
+  (kill-buffer))
 
 ;; private helper methods for list-backups
 (defun get-filter-pattern (file-name)
@@ -258,11 +265,6 @@
 		 (beginning-of-line)))
 	  (set-buffer-modified-p nil))
       (princ "No file on this line"))))
-
-(defun kill-buffer-without-saving ()
-  (interactive)
-  (set-buffer-modified-p nil)
-  (kill-buffer))
 
 (defun backups-mode ()
   "Major mode for viewing and reverting backup files"

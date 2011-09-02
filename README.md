@@ -59,8 +59,8 @@ While editing any file-based emacs buffer, there are two additional commands:
  * This will open a new buffer in backups-mode which will list all backups of the file.
  * By default, this command can be done with control-c b ("\C-cb")
  
-* kill-buffer-without-saving
- * This will close a buffer without saving any changes
+* kill-buffer-prompt
+ * This will allow the user to close a buffer without saving any changes
  * By default, this command can be done with control-c k ("\C-ck")
  
 While in the backups-mode buffer, these are the commands:
