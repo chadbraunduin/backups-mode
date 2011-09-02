@@ -236,7 +236,7 @@
 		 (insert " ")
 		 (setq first-diff-index nil)
 		 (beginning-of-line))
-		(first-diff-index
+		((integerp first-diff-index)
 		 (goto-line (get-line-number first-diff-index))
 		 (delete-char 1)
 		 (insert " ")
