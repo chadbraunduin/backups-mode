@@ -8,8 +8,8 @@
 (defvar last-modified-date-command-function 'nix-last-modified-date-command) ;; platform specific way of getting last modified date
 (defvar unknown-last-modified-date "stat:") ;; platform specific output for unknown last modified date
 
-(global-set-key "\C-c\C-v" 'save-version)
-(global-set-key "\C-c\C-b" 'list-backups)
+(global-set-key "\C-cv" 'save-version)
+(global-set-key "\C-cb" 'list-backups)
 
 ;; where do backups and autosaves get saved to
 (defvar emacs-directory (or emacs-directory "~/.emacs.d/"))
@@ -159,8 +159,8 @@
 			     (let* ((version (get-version file))
 				    (version (if version (concat (number-to-string version) "\t") "current"))
 				    (last-modified-date (or (get-last-modified-date file) (concat "unknown" "\t")))
-				    (file-name (get-file-name file)))
-			       (format "  %s\t%s\t%s\n" version last-modified-date file-name)))
+				    (short-file-name (file-name-nondirectory (get-file-name file))))
+			       (format "  %s\t%s\t%s\n" version last-modified-date short-file-name)))
 			   files)))
 	  (insert "<enter> to view (read-only), d + d to diff, R to revert")
 	  ;; move the cursor to the top
@@ -257,6 +257,11 @@
 		 (beginning-of-line)))
 	  (set-buffer-modified-p nil))
       (princ "No file on this line"))))
+
+(defun kill-buffer-without-saving ()
+  (interactive)
+  (set-buffer-modified-p nil)
+  (kill-buffer))
 
 (defun backups-mode ()
   "Major mode for viewing and reverting backup files"

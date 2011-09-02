@@ -53,11 +53,11 @@ While editing any file-based emacs buffer, there are two additional commands:
 
 * save-version
  * This will version the previous saved copy of the file.
- * By default, this command can be done with control-c control-v ("\C-c\C-v")
+ * By default, this command can be done with control-c control-v ("\C-cv")
 
 * list-backups
  * This will open a new buffer in backups-mode which will list all backups of the file.
- * By default, this command can be done with control-c control-b ("\C-c\C-b")
+ * By default, this command can be done with control-c control-b ("\C-cb")
  
 While in the backups-mode buffer, these are the commands:
 
