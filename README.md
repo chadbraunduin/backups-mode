@@ -48,6 +48,12 @@ By default, backups are saved to "~/.emacs.d/backups" and tramp file backups are
 * backup-directory
 * tramp-backup-directory
 
+### My .emacs
+As an example, here's the configuration from my .emacs file.
+    (require 'backups-mode)
+    (setq kept-new-versions 7
+          kept-old-versions 3)
+
 ## Commands
 While editing any file-based emacs buffer, there are two additional commands:
 
