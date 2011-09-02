@@ -136,7 +136,7 @@
     (define-key map (kbd "<return>") 'view-backup)
     (define-key map "r" (lambda () (interactive) (princ "Use a capital R to revert")))
     (define-key map "R" 'revert-backup)
-    (define-key map "d" 'diff-backup)
+    (define-key map "d" 'diff-version)
     (define-key map [remap next-line] 'next-line-at-beginning)
     (define-key map [remap previous-line] 'previous-line-at-beginning)
     map)
@@ -159,6 +159,8 @@
 	  (make-local-variable 'file-name)
 	  (make-local-variable 'buffer-name)
 	  (make-local-variable 'files)
+	  (setq first-diff-index nil)
+	  (make-local-variable 'first-diff-index)
 	  ;; do pretty print here
 	  (insert (format "backups for %s\n" file-name))
 	  (insert
@@ -223,8 +225,7 @@
 	     (find-file file-name)))
 	  (t (princ "No file on this line")))))
 
-(defvar first-diff-index nil)
-(defun diff-backup ()
+(defun diff-version ()
   (interactive)
   (let* ((line-number (line-number-at-pos))
 	 (index (get-index-number line-number)))
@@ -236,7 +237,7 @@
 		 (insert " ")
 		 (setq first-diff-index nil)
 		 (beginning-of-line))
-		((integerp first-diff-index)
+		(first-diff-index
 		 (goto-line (get-line-number first-diff-index))
 		 (delete-char 1)
 		 (insert " ")
