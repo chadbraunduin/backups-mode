@@ -138,6 +138,7 @@
     (define-key map "r" (lambda () (interactive) (princ "Use a capital R to revert")))
     (define-key map "R" 'revert-backup)
     (define-key map "d" 'diff-version)
+    (define-key map "q" (lambda () (interactive) (kill-buffer (buffer-name))))
     (define-key map [remap next-line] 'next-line-at-beginning)
     (define-key map [remap previous-line] 'previous-line-at-beginning)
     map)
@@ -173,7 +174,7 @@
 				    (short-file-name (file-name-nondirectory (get-file-name file))))
 			       (format "  %s\t%s\t%s\n" version last-modified-date short-file-name)))
 			   files)))
-	  (insert "<enter> to view (read-only), d + d to diff, R to revert")
+	  (insert "<enter> to view (read-only), d + d to diff, R to revert, q to quit")
 	  ;; move the cursor to the top
 	  (goto-char 1)
 	  (next-line)
