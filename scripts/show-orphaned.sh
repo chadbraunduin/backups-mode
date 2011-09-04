@@ -1,6 +1,6 @@
 #!/bin/bash
 
-backups_directory="/home/chadbraunduin/.emacs.d/backups"
+backups_directory="/home/chadbraunduin/.emacs-backups/backups"
 cd "$backups_directory"
 for backup in *.*~
 do
