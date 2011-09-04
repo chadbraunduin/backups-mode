@@ -53,7 +53,7 @@ As an example, here's the configuration from my .emacs file.
 
     (defvar backup-directory "~/.emacs-backups/backups/")
     (defvar tramp-backup-directory "~/.emacs-backups/tramp-backups/")
-    ;; backups-mode needs to be loaded after setting your backup directories
+    ;; backups-mode needs to be loaded after setting your backup directory variables
     (require 'backups-mode)
     (setq kept-new-versions 7
           kept-old-versions 3)

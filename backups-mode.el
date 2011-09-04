@@ -1,31 +1,25 @@
 ;;; backups-mode written by Chad Braun-Duin. 2011
 
-;; macro that will not override any variable settings you may have made in your .emacs file
-(defmacro set-ifunbound (var val)
-  `(if (not (boundp ',var))
-       (setq ,var ,val)
-     (identity ,var)))
-
 ;; global variables and .emacs configuation default values
-(set-ifunbound backups-mode-hook nil)
-(set-ifunbound diff-function 'diff) ;; change to diff or ediff or something else
-(set-ifunbound last-modified-date-command-function 'nix-last-modified-date-command) ;; platform specific way of getting last modified date
-(set-ifunbound unknown-last-modified-date "stat:") ;; platform specific output for unknown last modified date
+(defvar backups-mode-hook nil)
+(defvar diff-function 'diff) ;; change to diff or ediff or something else
+(defvar last-modified-date-command-function 'nix-last-modified-date-command) ;; platform specific way of getting last modified date
+(defvar unknown-last-modified-date "stat:") ;; platform specific output for unknown last modified date
 
 (global-set-key "\C-cv" 'save-version)
 (global-set-key "\C-cb" 'list-backups)
 (global-set-key "\C-ck" 'kill-buffer-prompt)
 
 ;; where do backups and autosaves get saved to
-(set-ifunbound emacs-directory "~/.emacs.d/")
+(defvar emacs-directory "~/.emacs.d/")
 
-(set-ifunbound backup-directory (concat emacs-directory "backups/"))
+(defvar backup-directory (concat emacs-directory "backups/"))
 (make-directory backup-directory t)
 (setq backup-directory-alist `((".*" . ,backup-directory)))
 (setq auto-save-list-file-prefix (concat backup-directory ".auto-saves-"))
 (setq auto-save-file-name-transforms `((".*" ,backup-directory t)))
 
-(set-ifunbound tramp-backup-directory (concat emacs-directory "tramp-backups/"))
+(defvar tramp-backup-directory (concat emacs-directory "tramp-backups/"))
 (make-directory tramp-backup-directory t)
 (setq tramp-backup-directory-alist `((".*" . ,tramp-backup-directory)))
 
