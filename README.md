@@ -27,7 +27,7 @@ Using the emacs version control functionality should not be a replacement for a 
     (require 'backups-mode)
 
 ## Additional configuration
-    # putting this in your .emacs will allow you to change version control settings. These are the default settings found in backups-mode.el.
+    ;; putting this in your .emacs will allow you to change version control settings. These are the default settings found in backups-mode.el.
     (setq backup-by-copying t
       delete-old-versions t
       kept-new-versions 6

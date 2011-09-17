@@ -1,4 +1,59 @@
-;;; backups-mode written by Chad Braun-Duin. 2011
+;;; backups-mode.el --- major mode for autosaving files and listing, viewing, and reverting Emacs generated backups
+
+;; this file is not part of Emacs
+
+;; Copyright (C) 2011 Chad Braun-Duin
+;; Author: Chad Braun-Duin <chadbraunduin@gmail.com>
+;; Maintainer: Chad Braun-Duin <chadbraunduin@gmail.com>
+;; Created: 27 Aug 2011
+;; URL: <https://github.com/chadbraunduin/backups-mode>.
+;; Keywords: backup, backups, autosaving, autosave, diff
+;; Compatibility: Emacs 23+
+
+;;; Installation:
+;;  git clone git@github.com:chadbraunduin/backups-mode.git
+;;  cd backups-mode
+;;  # copy to your emacs load-path
+;;  cp backups-mode.el ~/.emacs.d/
+;;  # this assumes ~/.emacs.d/ is in your emacs load-path
+;;  # add the following to .emacs
+;;  (require 'backups-mode)
+
+;;; Addtional Configuration:
+;;  ;; putting this in your .emacs will allow you to change version control settings. These are the default settings found in backups-mode.el.
+;;  (setq backup-by-copying t
+;;  delete-old-versions t
+;;  kept-new-versions 6
+;;  kept-old-versions 2
+;;  version-control t)
+;;  Documentation on these settings can be found here: <http://www.gnu.org/software/emacs/elisp/html_node/Numbered-Backups.html>
+
+;;; My Personal Configuration:
+;;  As an example, here's the configuration from my .emacs file
+;;  (defvar backup-directory "~/.emacs-backups/backups/")
+;;  (defvar tramp-backup-directory "~/.emacs-backups/tramp-backups/")
+;;  ;; backups-mode needs to be loaded after setting your backup directory variables
+;;  (require 'backups-mode)
+;;  (setq kept-new-versions 7
+;;  kept-old-versions 3)
+
+;;; Commentary:
+;;  The purpose of these commands and this new major mode is to loosely approximate the autosave-with-versions API
+;;  recently instituted by Apple for Mac OS X Lion.
+
+;;; Usage:
+;;  While editing a file-based buffer there are two new commands and some changes to note.
+;;    Now, whenever you kill a buffer or kill emacs, all file-based buffers will be saved without prompting.
+;;  New Commands while editing a file:
+;;    save-version (\C-cv) will backup the previously saved version of the file.
+;;    list-backups (\C-cb) will open a backups-mode buffer.
+;;  The backups-mode buffer will list all backups Emacs has created for the file and will allow you these options:
+;;    view-backup (<enter>) will open a backup file read-only.
+;;    revert-backup (R) will backup the current file then replace the current file with the backup you've chosen.
+;;    diff 2 files. (d + d) You can choose from the current file or any backup files and diff two of them.
+
+
+;;; Code:
 
 ;; global variables and .emacs configuation default values
 (defvar backups-mode-hook nil)
@@ -279,3 +334,5 @@
   (run-hooks 'backups-mode-hook))
 
 (provide 'backups-mode)
+
+;;; backups-mode.el ends here
