@@ -53,11 +53,11 @@
 ;;    diff 2 files. (d + d) You can choose from the current file or any backup files and diff two of them.
 
 
-;;; Code:
+;;;; Code:
 
-;; global variables and .emacs configuation default values
+;;; global variables and .emacs configuation default values
 (defvar backups-mode-hook nil)
-(defvar diff-function 'diff) ;; change to diff or ediff or something else
+(defvar diff-function 'diff-no-select) ;; change to diff or ediff or something else
 (defvar last-modified-date-command-function 'nix-last-modified-date-command) ;; platform specific way of getting last modified date
 (defvar unknown-last-modified-date "stat:") ;; platform specific output for unknown last modified date
 
@@ -65,7 +65,7 @@
 (global-set-key "\C-cb" 'list-backups)
 (global-set-key "\C-ck" 'kill-buffer-prompt)
 
-;; where do backups and autosaves get saved to
+;;; autosave configuration section
 (defvar emacs-directory "~/.emacs.d/")
 
 (defvar backup-directory (concat emacs-directory "backups/"))
@@ -107,7 +107,7 @@
     (set-buffer-modified-p nil))
   (kill-buffer))
 
-;; private helper methods for list-backups
+;;; list-backups and private helper methods
 (defun get-filter-pattern (file-name)
   (concat (replace-regexp-in-string "\/" "!" file-name t t)
 	  "\.~[0-9]*~*$"))
@@ -149,7 +149,46 @@
 (defun nix-last-modified-date-command (file-name)
   (concat "stat -c %y " file-name))
 
-;; file structure methods
+(defun list-backups ()
+  (interactive)
+  (let ((old-buffer-name (buffer-name))
+	(old-file-name (buffer-file-name)))
+    (if old-file-name
+	(progn
+	  (switch-to-buffer (format "%s~backups" old-buffer-name))
+	  (backups-mode) ;; switch to backups-mode
+	  (erase-buffer)
+	  (setq file-name old-file-name)
+	  (setq buffer-name old-buffer-name)
+	  (setq files (mapcar 'make-file (cons file-name (sort
+							  (filter-files (get-backup-directory old-file-name) old-file-name)
+							  'file-sort-p))))
+	  (make-local-variable 'file-name)
+	  (make-local-variable 'buffer-name)
+	  (make-local-variable 'files)
+	  (setq first-diff-index nil)
+	  (make-local-variable 'first-diff-index)
+	  (setq buffers-opened '())
+	  (make-local-variable 'buffers-opened)
+	  ;; do pretty print here
+	  (insert (format "backups for %s\n" file-name))
+	  (insert
+	   (apply 'concat (mapcar
+			   (lambda (file)
+			     (let* ((version (get-version file))
+				    (version (if version (concat (number-to-string version) "\t") "current"))
+				    (last-modified-date (or (get-last-modified-date file) (concat "unknown" "\t")))
+				    (short-file-name (file-name-nondirectory (get-file-name file))))
+			       (format "  %s\t%s\t%s\n" version last-modified-date short-file-name)))
+			   files)))
+	  ;; move the cursor to the top
+	  (goto-char 1)
+	  (next-line)
+	  (beginning-of-line)
+	  (set-buffer-modified-p nil))
+      (princ "No backups for a non-file buffer"))))
+
+;;; file structure methods
 (defun make-file (file-name)
   (list
    (make-version-number file-name)
@@ -170,7 +209,7 @@
 	(version2 (make-version-number file-name2)))
     (> version1 version2)))
 
-;; backups mode private methods
+;;; backups mode private methods
 (defun get-file-name-from-index (index)
   (get-file-name (nth index files)))
 
@@ -185,7 +224,7 @@
       tramp-backup-directory
     backup-directory))
 
-;; backups mode map and methods
+;;; backups mode map and methods
 (defvar backups-mode-map
   (let ((map (make-sparse-keymap)))
     (suppress-keymap map)
@@ -193,64 +232,39 @@
     (define-key map "r" (lambda () (interactive) (princ "Use a capital R to revert")))
     (define-key map "R" 'revert-backup)
     (define-key map "d" 'diff-version)
-    (define-key map "q" (lambda () (interactive) (kill-buffer (buffer-name))))
+    (define-key map "q" (lambda ()
+			  (interactive)
+			  (kill-buffer (buffer-name))
+			  (mapc (lambda (buffer) (kill-buffer buffer)) buffers-opened))
+      ) ;; quit buffer and cleanup all other buffers opened up in the process
     (define-key map [remap next-line] 'next-line-at-beginning)
     (define-key map [remap previous-line] 'previous-line-at-beginning)
     map)
   "Keymap for backups major mode")
 
-(defun list-backups ()
+(defun backups-mode ()
+  "Major mode for viewing and reverting backup files"
   (interactive)
-  (let ((old-buffer-name (buffer-name))
-	(old-file-name (buffer-file-name)))
-    (if old-file-name
-	(progn
-	  (switch-to-buffer (format "%s~backups" old-buffer-name))
-	  (backups-mode) ;; switch to backups-mode
-	  (erase-buffer)
-	  (setq file-name old-file-name)
-	  (setq buffer-name old-buffer-name)
-	  (setq files (mapcar 'make-file (cons file-name (sort
-							  (filter-files (get-backup-directory old-file-name) old-file-name)
-							  'file-sort-p))))
-	  (make-local-variable 'file-name)
-	  (make-local-variable 'buffer-name)
-	  (make-local-variable 'files)
-	  (setq first-diff-index nil)
-	  (make-local-variable 'first-diff-index)
-	  ;; do pretty print here
-	  (insert (format "backups for %s\n" file-name))
-	  (insert
-	   (apply 'concat (mapcar
-			   (lambda (file)
-			     (let* ((version (get-version file))
-				    (version (if version (concat (number-to-string version) "\t") "current"))
-				    (last-modified-date (or (get-last-modified-date file) (concat "unknown" "\t")))
-				    (short-file-name (file-name-nondirectory (get-file-name file))))
-			       (format "  %s\t%s\t%s\n" version last-modified-date short-file-name)))
-			   files)))
-	  (insert "<enter> to view (read-only), d + d to diff, R to revert, q to quit")
-	  ;; move the cursor to the top
-	  (goto-char 1)
-	  (next-line)
-	  (beginning-of-line)
-	  (set-buffer-modified-p nil))
-      (princ "No backups for a non-file buffer"))))
+  (kill-all-local-variables)
+  (use-local-map backups-mode-map)
+  (buffer-disable-undo)
+  (setq header-line-format (format " <enter> to view (read-only), d + d to diff, R to revert, q to quit"))
+  (setq major-mode 'backups-mode)
+  (setq mode-name "Backups")
+  (run-hooks 'backups-mode-hook))
 
-(defun save-version ()
-  (interactive)
-  (set-buffer-modified-p t)
-  (save-buffer 16)) ;; archive a copy of the previous version)
+(define-minor-mode view-backup-mode ()
+  "Minor mode for viewing a single backup file"
+  " Backup-file"
+  '(("q" . (lambda () (interactive) (kill-buffer (buffer-name)))))
+  :init-value nil)
 
-(defun next-line-at-beginning ()
-  (interactive)
-  (next-line)
-  (beginning-of-line))
-
-(defun previous-line-at-beginning ()
-  (interactive)
-  (previous-line)
-  (beginning-of-line))
+(add-hook 'diff-mode-hook
+	  (lambda ()
+	    (setq buffer-read-only t)
+	    (buffer-disable-undo)
+	    (setq header-line-format (format " q to quit"))
+	    (local-set-key "q" (lambda () (interactive) (kill-buffer (buffer-name))))))
 
 (defun view-backup ()
   (interactive)
@@ -260,7 +274,11 @@
 	       (switch-to-buffer buffer-name)
 	     (find-file file-name)))
 	  ((and (> index 0) (< index (length files)))
-	   (find-file-read-only (get-file-name-from-index index)))
+	   (setq ro-buffer (find-file-noselect (get-file-name-from-index index)))
+	   (switch-to-buffer ro-buffer)
+	   (setq header-line-format (format " q to quit"))
+	   (view-backup-mode t)
+	   (push ro-buffer buffers-opened))
 	  (t (princ "No file on this line")))))
 
 (defun revert-backup ()
@@ -273,6 +291,7 @@
 		  (temp-backup-file-name (concat backup-file-name "#temp#")))
 	     ;; using a temp file is necessary since saving the buffer may delete the backup file before it can be restored
 	     (copy-file backup-file-name temp-backup-file-name)
+	     (kill-buffer) ;; kill the backups-mode buffer
 	     (switch-to-buffer buffer-name)
 	     (save-buffer) ;; first, save the buffer. This is so the current changes become a saved version
 	     (save-version) ;; save a version of the current buffer
@@ -311,9 +330,10 @@
 		   (let ((first-file-name (get-file-name-from-index first-diff-index))
 			 (second-file-name (get-file-name-from-index index)))
 		     (setq first-diff-index nil)
-		     (funcall diff-function
-			      first-file-name
-			      second-file-name))))
+		     (setq diff-buffer (funcall diff-function first-file-name second-file-name))
+		     (set-buffer-modified-p nil)
+		     (switch-to-buffer diff-buffer)
+		     (push diff-buffer buffers-opened))))
 		(t
 		 (setq first-diff-index index)
 		 (beginning-of-line)
@@ -324,14 +344,26 @@
 	  (set-buffer-modified-p nil))
       (princ "No file on this line"))))
 
-(defun backups-mode ()
-  "Major mode for viewing and reverting backup files"
+;;; utilities
+(or (fboundp 'diff-no-select)
+    (defun diff-no-select (old new &optional switches no-async)
+      (save-window-excursion (diff old new switches no-async))
+      (get-buffer-create "*Diff*")))
+
+(defun save-version ()
   (interactive)
-  (kill-all-local-variables)
-  (use-local-map backups-mode-map)
-  (setq major-mode 'backups-mode)
-  (setq mode-name "Backups")
-  (run-hooks 'backups-mode-hook))
+  (set-buffer-modified-p t)
+  (save-buffer 16)) ;; archive a copy of the previous version)
+
+(defun next-line-at-beginning ()
+  (interactive)
+  (next-line)
+  (beginning-of-line))
+
+(defun previous-line-at-beginning ()
+  (interactive)
+  (previous-line)
+  (beginning-of-line))
 
 (provide 'backups-mode)
 
