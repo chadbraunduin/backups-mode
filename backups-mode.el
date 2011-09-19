@@ -1,8 +1,19 @@
 ;;; backups-mode.el --- major mode for autosaving files and listing, viewing, and reverting Emacs generated backups
+;; Copyright (C) 2011 by Chad Braun-Duin
 
-;; this file is not part of Emacs
+;; This program is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
 
-;; Copyright (C) 2011 Chad Braun-Duin
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 ;; Author: Chad Braun-Duin <chadbraunduin@gmail.com>
 ;; Maintainer: Chad Braun-Duin <chadbraunduin@gmail.com>
 ;; Created: 27 Aug 2011
@@ -10,7 +21,11 @@
 ;; Keywords: backup, backups, autosaving, autosave, diff
 ;; Compatibility: Emacs 23+
 
-;;; Installation:
+;;; Commentary:
+;;  The purpose of these commands and this new major mode is to loosely approximate the autosave-with-versions API
+;;  recently instituted by Apple for Mac OS X Lion.
+
+;;; Installation
 ;;  git clone git@github.com:chadbraunduin/backups-mode.git
 ;;  cd backups-mode
 ;;  # copy to your emacs load-path
@@ -19,7 +34,7 @@
 ;;  # add the following to .emacs
 ;;  (require 'backups-mode)
 
-;;; Addtional Configuration:
+;;; Addtional Configuration
 ;;  ;; putting this in your .emacs will allow you to change version control settings. These are the default settings found in backups-mode.el.
 ;;  (setq backup-by-copying t
 ;;  delete-old-versions t
@@ -28,7 +43,7 @@
 ;;  version-control t)
 ;;  Documentation on these settings can be found here: <http://www.gnu.org/software/emacs/elisp/html_node/Numbered-Backups.html>
 
-;;; My Personal Configuration:
+;;; My Personal Configuration
 ;;  As an example, here's the configuration from my .emacs file
 ;;  (defvar backup-directory "~/.emacs-backups/backups/")
 ;;  (defvar tramp-backup-directory "~/.emacs-backups/tramp-backups/")
@@ -37,11 +52,7 @@
 ;;  (setq kept-new-versions 7
 ;;  kept-old-versions 3)
 
-;;; Commentary:
-;;  The purpose of these commands and this new major mode is to loosely approximate the autosave-with-versions API
-;;  recently instituted by Apple for Mac OS X Lion.
-
-;;; Usage:
+;;; Usage
 ;;  While editing a file-based buffer there are two new commands and some changes to note.
 ;;    Now, whenever you kill a buffer or kill emacs, all file-based buffers will be saved without prompting.
 ;;  New Commands while editing a file:
@@ -53,17 +64,41 @@
 ;;    diff 2 files. (d + d) You can choose from the current file or any backup files and diff two of them.
 
 
-;;;; Code:
+;;; Code:
 
 ;;; global variables and .emacs configuation default values
 (defvar backups-mode-hook nil)
-(defvar diff-function 'diff-no-select) ;; change to diff or ediff or something else
 (defvar last-modified-date-command-function 'nix-last-modified-date-command) ;; platform specific way of getting last modified date
 (defvar unknown-last-modified-date "stat:") ;; platform specific output for unknown last modified date
 
 (global-set-key "\C-cv" 'save-version)
 (global-set-key "\C-cb" 'list-backups)
 (global-set-key "\C-ck" 'kill-buffer-prompt)
+
+;;; utilities
+(defun filter (condp lst)
+  (delq nil
+	(mapcar (lambda (x) (and (funcall condp x) x)) lst)))
+
+(or (fboundp 'diff-no-select)
+    (defun diff-no-select (old new &optional switches no-async)
+      (save-window-excursion (diff old new switches no-async))
+      (get-buffer-create "*Diff*")))
+
+(defun save-version ()
+  (interactive)
+  (set-buffer-modified-p t)
+  (save-buffer 16)) ;; archive a copy of the previous version)
+
+(defun next-line-at-beginning ()
+  (interactive)
+  (next-line)
+  (beginning-of-line))
+
+(defun previous-line-at-beginning ()
+  (interactive)
+  (previous-line)
+  (beginning-of-line))
 
 ;;; autosave configuration section
 (defvar emacs-directory "~/.emacs.d/")
@@ -112,10 +147,6 @@
   (concat (replace-regexp-in-string "\/" "!" file-name t t)
 	  "\.~[0-9]*~*$"))
 
-(defun filter (condp lst)
-  (delq nil
-	(mapcar (lambda (x) (and (funcall condp x) x)) lst)))
-
 (defun filter-files (backup-directory buffer-file-name)
   (mapcar (lambda (backup-name) (concat backup-directory backup-name))
 	  (filter (lambda (backup-name)
@@ -158,18 +189,24 @@
 	  (switch-to-buffer (format "%s~backups" old-buffer-name))
 	  (backups-mode) ;; switch to backups-mode
 	  (erase-buffer)
+
+	  (make-variable-buffer-local 'file-name)
 	  (setq file-name old-file-name)
+
+	  (make-variable-buffer-local 'buffer-name)
 	  (setq buffer-name old-buffer-name)
+
+	  (make-variable-buffer-local 'files)
 	  (setq files (mapcar 'make-file (cons file-name (sort
 							  (filter-files (get-backup-directory old-file-name) old-file-name)
 							  'file-sort-p))))
-	  (make-local-variable 'file-name)
-	  (make-local-variable 'buffer-name)
-	  (make-local-variable 'files)
+
+	  (make-variable-buffer-local 'first-diff-index)
 	  (setq first-diff-index nil)
-	  (make-local-variable 'first-diff-index)
+
+	  (make-variable-buffer-local 'buffers-opened)
 	  (setq buffers-opened '())
-	  (make-local-variable 'buffers-opened)
+	  
 	  ;; do pretty print here
 	  (insert (format "backups for %s\n" file-name))
 	  (insert
@@ -256,7 +293,14 @@
 (define-minor-mode view-backup-mode ()
   "Minor mode for viewing a single backup file"
   " Backup-file"
-  '(("q" . (lambda () (interactive) (kill-buffer (buffer-name)))))
+  '(("q" . (lambda () (interactive) (kill-buffer (buffer-name))))
+    ("d" . (lambda ()
+	     (interactive)
+	     (let ((orig-file-name file-name))
+	       (setq diff-buffer (diff-no-select file-name (buffer-file-name)))
+	       (switch-to-buffer diff-buffer)
+	       (setq file-name orig-file-name)
+	       (push diff-buffer buffers-opened)))))
   :init-value nil)
 
 (add-hook 'diff-mode-hook
@@ -268,7 +312,8 @@
 
 (defun view-backup ()
   (interactive)
-  (let ((index (get-index-number (line-number-at-pos))))
+  (let ((index (get-index-number (line-number-at-pos)))
+	(orig-file-name file-name))
     (cond ((zerop index)
 	   (if (get-buffer buffer-name)
 	       (switch-to-buffer buffer-name)
@@ -276,8 +321,9 @@
 	  ((and (> index 0) (< index (length files)))
 	   (setq ro-buffer (find-file-noselect (get-file-name-from-index index)))
 	   (switch-to-buffer ro-buffer)
-	   (setq header-line-format (format " q to quit"))
 	   (view-backup-mode t)
+	   (setq header-line-format (format " d to diff with current file, q to quit"))
+	   (setq file-name orig-file-name)
 	   (push ro-buffer buffers-opened))
 	  (t (princ "No file on this line")))))
 
@@ -330,7 +376,7 @@
 		   (let ((first-file-name (get-file-name-from-index first-diff-index))
 			 (second-file-name (get-file-name-from-index index)))
 		     (setq first-diff-index nil)
-		     (setq diff-buffer (funcall diff-function first-file-name second-file-name))
+		     (setq diff-buffer (diff-no-select first-file-name second-file-name))
 		     (set-buffer-modified-p nil)
 		     (switch-to-buffer diff-buffer)
 		     (push diff-buffer buffers-opened))))
@@ -343,27 +389,6 @@
 		 (beginning-of-line)))
 	  (set-buffer-modified-p nil))
       (princ "No file on this line"))))
-
-;;; utilities
-(or (fboundp 'diff-no-select)
-    (defun diff-no-select (old new &optional switches no-async)
-      (save-window-excursion (diff old new switches no-async))
-      (get-buffer-create "*Diff*")))
-
-(defun save-version ()
-  (interactive)
-  (set-buffer-modified-p t)
-  (save-buffer 16)) ;; archive a copy of the previous version)
-
-(defun next-line-at-beginning ()
-  (interactive)
-  (next-line)
-  (beginning-of-line))
-
-(defun previous-line-at-beginning ()
-  (interactive)
-  (previous-line)
-  (beginning-of-line))
 
 (provide 'backups-mode)
 
