@@ -69,7 +69,12 @@
 ;;; global variables and .emacs configuation default values
 (defvar backups-mode-hook nil)
 (defvar last-modified-date-command-function 'nix-last-modified-date-command) ;; platform specific way of getting last modified date
-(defvar unknown-last-modified-date "stat:") ;; platform specific output for unknown last modified date
+(defvar unknown-last-modified-date "date:") ;; platform specific output for unknown last modified date
+
+(defun nix-last-modified-date-command (file-name)
+  (concat "date -r " file-name " +\"%x %r\""))
+
+(eval-and-compile (require 'diff))
 
 (global-set-key "\C-cv" 'save-version)
 (global-set-key "\C-cb" 'list-backups)
@@ -89,11 +94,6 @@
   (interactive)
   (set-buffer-modified-p t)
   (save-buffer 16)) ;; archive a copy of the previous version)
-
-(defun next-line-at-beginning ()
-  (interactive)
-  (next-line)
-  (beginning-of-line))
 
 (defun previous-line-at-beginning ()
   (interactive)
@@ -143,15 +143,25 @@
   (kill-buffer))
 
 ;;; list-backups and private helper methods
-(defun get-filter-pattern (file-name)
-  (concat (replace-regexp-in-string "\/" "!" file-name t t)
-	  "\.~[0-9]*~*$"))
+(defun backup-files (original-file)
+  (let* ((backup-file (file-name-sans-versions
+		      (make-backup-file-name (expand-file-name original-file))))
+	(backup-directory (file-name-directory backup-file)))
+    (mapcar
+     (lambda (f) (concat backup-directory f))
+     (file-name-all-completions
+      (file-name-nondirectory backup-file)
+      backup-directory))))
 
-(defun filter-files (backup-directory buffer-file-name)
-  (mapcar (lambda (backup-name) (concat backup-directory backup-name))
-	  (filter (lambda (backup-name)
-		    (string-match (get-filter-pattern buffer-file-name) backup-name))
-		  (directory-files backup-directory))))
+(defun get-sorted-backups (original-file)
+  (flet ((file-sort-p (file-name1 file-name2)
+		      (let ((version1 (make-version-number file-name1))
+			    (version2 (make-version-number file-name2)))
+			(> version1 version2))))
+    (mapcar 'make-file
+	    (cons original-file (sort
+				 (backup-files original-file)
+				 'file-sort-p)))))
 
 (defun make-version-number (file-name)
   (let ((try-version-index (string-match "~[0-9]+~$" file-name)))
@@ -177,9 +187,6 @@
     (when (not (equal last-modified-date unknown-last-modified-date))
       last-modified-date)))
 
-(defun nix-last-modified-date-command (file-name)
-  (concat "stat -c %y " file-name))
-
 (defun list-backups ()
   (interactive)
   (let ((old-buffer-name (buffer-name))
@@ -197,9 +204,7 @@
 	  (setq buffer-name old-buffer-name)
 
 	  (make-variable-buffer-local 'files)
-	  (setq files (mapcar 'make-file (cons file-name (sort
-							  (filter-files (get-backup-directory old-file-name) old-file-name)
-							  'file-sort-p))))
+	  (setq files (get-sorted-backups old-file-name))
 
 	  (make-variable-buffer-local 'first-diff-index)
 	  (setq first-diff-index nil)
@@ -208,15 +213,16 @@
 	  (setq buffers-opened '())
 	  
 	  ;; do pretty print here
-	  (insert (format "backups for %s\n" file-name))
+	  (insert (format "%s\n" file-name))
 	  (insert
 	   (apply 'concat (mapcar
 			   (lambda (file)
 			     (let* ((version (get-version file))
 				    (version (if version (concat (number-to-string version) "\t") "current"))
-				    (last-modified-date (or (get-last-modified-date file) (concat "unknown" "\t")))
-				    (short-file-name (file-name-nondirectory (get-file-name file))))
-			       (format "  %s\t%s\t%s\n" version last-modified-date short-file-name)))
+				    (last-modified-date (or (get-last-modified-date file) (concat "unknown" "\t"))))
+			       (format "  %-6s\t%s\n"
+				       (propertize version 'face 'font-lock-keyword-face)
+				       last-modified-date)))
 			   files)))
 	  ;; move the cursor to the top
 	  (goto-char 1)
@@ -240,11 +246,6 @@
 
 (defun get-file-name (file)
   (nth 2 file))
-
-(defun file-sort-p (file-name1 file-name2)
-  (let ((version1 (make-version-number file-name1))
-	(version2 (make-version-number file-name2)))
-    (> version1 version2)))
 
 ;;; backups mode private methods
 (defun get-file-name-from-index (index)
@@ -274,7 +275,7 @@
 			  (kill-buffer (buffer-name))
 			  (mapc (lambda (buffer) (kill-buffer buffer)) buffers-opened))
       ) ;; quit buffer and cleanup all other buffers opened up in the process
-    (define-key map [remap next-line] 'next-line-at-beginning)
+    (define-key map [remap next-line] 'forward-line)
     (define-key map [remap previous-line] 'previous-line-at-beginning)
     map)
   "Keymap for backups major mode")
@@ -336,7 +337,7 @@
 	   (let* ((backup-file-name (get-file-name-from-index index))
 		  (temp-backup-file-name (concat backup-file-name "#temp#")))
 	     ;; using a temp file is necessary since saving the buffer may delete the backup file before it can be restored
-	     (copy-file backup-file-name temp-backup-file-name)
+	     (copy-file backup-file-name temp-backup-file-name t)
 	     (kill-buffer) ;; kill the backups-mode buffer
 	     (switch-to-buffer buffer-name)
 	     (save-buffer) ;; first, save the buffer. This is so the current changes become a saved version
