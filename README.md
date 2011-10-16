@@ -20,14 +20,15 @@ Using the emacs version control functionality should not be a replacement for a 
 ## Installation
     git clone git@github.com:chadbraunduin/backups-mode.git
     cd backups-mode
-    # copy to your emacs load-path
-    cp backups-mode.el ~/.emacs.d/
+    # copy the necessary files to your emacs load-path
+    cp backups-mode.el bm-utilities.el backup-walker.el ~/.emacs.d/
     # this assumes ~/.emacs.d/ is in your emacs load-path
     # add the following to .emacs
     (require 'backups-mode)
+    (backups-mode-start)
 
 ## Additional configuration
-    ;; putting this in your .emacs will allow you to change version control settings. These are the default settings found in backups-mode.el.
+    ;; putting this in your .emacs will allow you to change version control settings. The following are the default settings found in backups-mode.el.
     (setq backup-by-copying t
       delete-old-versions t
       kept-new-versions 6
@@ -40,8 +41,6 @@ If you are using Windows, you'll want to set these objects to be Windows specifi
 * last-modified-date-command-function
 * unknown-last-modified-date
 
-By default, backups-mode uses "diff" to diff two files. This can be changed by setting the function "diff-function" to something else (eg ediff).
-
 By default, backups are saved to "~/.emacs.d/backups" and tramp file backups are saved to "~/.emacs.d/tramp-backups". These defaults can be changed by setting:
 
 * emacs-directory
@@ -51,15 +50,15 @@ By default, backups are saved to "~/.emacs.d/backups" and tramp file backups are
 ### My .emacs
 As an example, here's the configuration from my .emacs file.
 
+    (require 'backups-mode)
     (defvar backup-directory "~/.emacs-backups/backups/")
     (defvar tramp-backup-directory "~/.emacs-backups/tramp-backups/")
-    ;; backups-mode needs to be loaded after setting your backup directory variables
-    (require 'backups-mode)
-    (setq kept-new-versions 7
-          kept-old-versions 3)
+    (backups-mode-start)
+    ;; keep all versions forever
+    (setq delete-old-versions 1)
 
 ## Commands
-While editing any file-based emacs buffer, there are two additional commands:
+While editing any file-based emacs buffer, there are some additional commands:
 
 * save-version
  * This will version the previous saved copy of the file.
@@ -68,6 +67,10 @@ While editing any file-based emacs buffer, there are two additional commands:
 * list-backups
  * This will open a new buffer in backups-mode which will list all backups of the file.
  * By default, this command can be done with control-c b ("\C-cb")
+
+* backup-walker
+ * This will open a new buffer in backup-walker mode which will let you sequentially move through backup diffs.
+ * By default, this command can be done with control-c w ("\C-cw")
  
 * kill-buffer-prompt
  * This will allow the user to close a buffer without saving any changes
@@ -86,6 +89,9 @@ While in the backups-mode buffer, these are the commands:
 * Diff 2 Files
  * This is done by aligning the cursor to a file's line, and typing "d". This will mark that line as first file to diff. 
  * Then, you align the cursor to another file's line and type "d". This will run the "diff-function" command on the two selected files.
+ 
+## Backup Walker
+I've adapted lewang's [backup-walker](https://github.com/lewang/backup-walker) project. Backup Walker gives you a different view on your backups. Whereas Backups Mode lists all of your backups, Backup Walker starts with a diff of the current file and the previous backup. You can then sequentially move through diffs of consecutive backup files. Often, if you know what you are looking for, Backup Walker can be more efficient than Backups Mode.
 
 ## Cleanup
 The problem with creating N backup files per file is that over time you'll have generated a lot of backup files. Some of these backup files may even be orphaned if the original file is moved or deleted. I've taken two approaches for this problem:
@@ -109,5 +115,7 @@ I use rsnapshot for rsync backups to an external drive. I've decided I do not ca
 ## Bugs and TODOs
 As with most projects, this is still a work in progress. The known issues are:
 
+* I would like to add functionality to delete backup(s) as like in Dired mode.
+* I am planning on adapting this project to work with git-mode work-in-progress backups (WIP).
+* A [bug](https://github.com/chadbraunduin/backups-mode/issues/1) using this on Mac Os X has been reported. This is related to use the function copy-file. 
 * I have not tested it in Windows, yet. I believe configuration changes will be necessary to make it work in that environment. Since I only use emacs in Linux, this is not a personal priority for me.
-
