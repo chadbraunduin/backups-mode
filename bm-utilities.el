@@ -141,6 +141,9 @@
 (defun bm-get-backups (data)
   (cdr (assq :backups data)))
 
+(defun bm-get-marked-for-purging (data)
+  (cdr (assq :marked-for-purging data)))
+
 (defun bm-get-first-config (data)
   (cdr (assq :first-config data)))
 

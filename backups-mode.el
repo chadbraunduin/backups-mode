@@ -65,7 +65,8 @@
 ;;  The backups-mode buffer will list all backups Emacs has created for the file and will allow you these options:
 ;;    view-backup (<enter>) will open a backup file read-only.
 ;;    revert-backup (R) will backup the current file then replace the current file with the backup you've chosen.
-;;    diff 2 files. (d + d) You can choose from the current file or any backup files and diff two of them.
+;;    diff 2 files (d + d) You can choose from the current file or any backup files and diff two of them.
+;;    purge backups (p [+ p] + x) You can delete backups in a batch fashion by marking backups then executing a deletion of all the marked backups.
 
 
 ;;; Code:
@@ -166,6 +167,7 @@ are saved automatically when they are killed"
     (push `(:original-file . ,original-file) data))
   (push `(:backups . ,(bm-get-sorted-backups original-file backup-files-function)) data)
   (push `(:backups-buffer . ,(current-buffer)) data)
+  (push `(:marked-for-purging . ,(list)) data)
   (unless (assq :first-config data)
     (push `(:first-config . ,first-config) data))
   (if (assq :second-config data)
@@ -192,8 +194,7 @@ are saved automatically when they are killed"
 		   (bm-get-backups data))))
   ;; move the cursor to the top
   (goto-char 1)
-  (next-line)
-  (beginning-of-line)
+  (forward-line)
   (set-buffer-modified-p nil))
 
 ;;; backups-mode map and methods
@@ -211,6 +212,8 @@ are saved automatically when they are killed"
     (define-key map "r" (lambda () (interactive) (princ bm-revert-message)))
     (define-key map "R" 'revert-backup)
     (define-key map "d" 'diff-version)
+    (define-key map "p" 'mark-backup-for-purge)
+    (define-key map "x" 'purge-backups)
     (define-key map "q" (lambda () (interactive) (bm-kill-all-buffers backups-mode-data-alist))) ;; quit buffer and cleanup all other buffers opened up in the process
     (define-key map [remap next-line] 'forward-line)
     (define-key map [remap previous-line] (lambda () (interactive) (previous-line) (beginning-of-line)))
@@ -222,9 +225,8 @@ are saved automatically when they are killed"
   (kill-all-local-variables)
   (use-local-map (backups-mode-map))
   (buffer-disable-undo)
-  (setq header-line-format (concat (when (backup-walker-p)
-				     "<w> backup-walker,")
-				   " <return> view backup, <d> + <d> diff, <R> revert, <q> quit"))
+  (setq header-line-format (concat (when (backup-walker-p) "<w> backup-walker,")
+				   " <return> view backup, <d> + <d> diff, <R> revert, <p> + <x> delete, <q> quit"))
   (setq major-mode 'backups-mode)
   (setq mode-name "Backups-list")
   (run-hooks 'backups-mode-hook))
@@ -254,6 +256,9 @@ are saved automatically when they are killed"
 
 (defun bm-get-index-number (line-number)
   (- line-number 2))
+
+(defun bm-get-line-number (index)
+  (+ index 2))
 
 ;;; backups-mode commands
 
@@ -322,47 +327,44 @@ the chosen backup."
 (defun diff-version ()
   "Diff two versions of the file."
   (interactive)
-  (flet ((get-line-number (index)
-			  (+ index 2)))
-    (let* ((line-number (line-number-at-pos))
-	   (index (bm-get-index-number line-number))
-	   (orig-buffer-name (buffer-name (get-file-buffer (bm-get-original-file backups-mode-data-alist)))))
-      (if (and (>= index 0) (< index (length (bm-get-backups backups-mode-data-alist))))
-	  (progn
-	    (cond ((eq first-diff-index index)
-		   (beginning-of-line)
-		   (delete-char 1)
-		   (insert " ")
-		   (setq first-diff-index nil)
-		   (beginning-of-line))
-		  (first-diff-index
-		   (goto-line (get-line-number first-diff-index))
-		   (delete-char 1)
-		   (insert " ")
-		   (goto-line line-number)
-		   (progn
-		     (when (and
-			    (zerop first-diff-index)
-			    (get-buffer orig-buffer-name)
-			    (buffer-modified-p (get-buffer orig-buffer-name)))
-		       (let ((backups-mode-buffer-name (buffer-name)))
-			 (switch-to-buffer orig-buffer-name)
-			 (save-buffer)
-			 (switch-to-buffer backups-mode-buffer-name)))
-		     (let ((first-file-name (bm-get-file-name-from-index first-diff-index))
-			   (second-file-name (bm-get-file-name-from-index index)))
-		       (setq first-diff-index nil)
-		       (set-buffer-modified-p nil)
-		       (bm-diff-files first-file-name second-file-name))))
-		  (t
-		   (setq first-diff-index index)
-		   (beginning-of-line)
-		   (insert "d")
-		   (delete-char 1)
-		   (next-line)
-		   (beginning-of-line)))
-	    (set-buffer-modified-p nil))
-	(princ bm-no-file-message)))))
+  (let* ((line-number (line-number-at-pos))
+	 (index (bm-get-index-number line-number))
+	 (orig-buffer-name (buffer-name (get-file-buffer (bm-get-original-file backups-mode-data-alist)))))
+    (if (and (>= index 0) (< index (length (bm-get-backups backups-mode-data-alist))))
+	(progn
+	  (cond ((eq first-diff-index index)
+		 (beginning-of-line)
+		 (delete-char 1)
+		 (insert " ")
+		 (setq first-diff-index nil)
+		 (beginning-of-line))
+		(first-diff-index
+		 (goto-line (bm-get-line-number first-diff-index))
+		 (delete-char 1)
+		 (insert " ")
+		 (goto-line line-number)
+		 (progn
+		   (when (and
+			  (zerop first-diff-index)
+			  (get-buffer orig-buffer-name)
+			  (buffer-modified-p (get-buffer orig-buffer-name)))
+		     (let ((backups-mode-buffer-name (buffer-name)))
+		       (switch-to-buffer orig-buffer-name)
+		       (save-buffer)
+		       (switch-to-buffer backups-mode-buffer-name)))
+		   (let ((first-file-name (bm-get-file-name-from-index first-diff-index))
+			 (second-file-name (bm-get-file-name-from-index index)))
+		     (setq first-diff-index nil)
+		     (set-buffer-modified-p nil)
+		     (bm-diff-files first-file-name second-file-name))))
+		(t
+		 (setq first-diff-index index)
+		 (beginning-of-line)
+		 (insert "d")
+		 (delete-char 1)
+		 (forward-line)))
+	  (set-buffer-modified-p nil))
+      (princ bm-no-file-message))) )
 
 (defun diff-with-current ()
   "diff the current backup buffer with the current version of the file"
@@ -384,6 +386,52 @@ the chosen backup."
     (setq backups-mode-data-alist orig-data)
     (setq header-line-format "<q> quit, <1> view first, <2> view second")))
 
+
+;; deletion
+(defun mark-backup-for-purge ()
+  "mark backups for batch deletion"
+  (interactive)
+  (let ((index (bm-get-index-number (line-number-at-pos)))
+	(marked (bm-get-marked-for-purging backups-mode-data-alist)))
+    (cond ((zerop index)
+	   (princ "Cannot mark the current file for purging"))
+	  ((and (>= index 0) (< index (length (bm-get-backups backups-mode-data-alist))))
+	   (if (memq index marked)
+	       (progn
+		 (beginning-of-line)
+		 (delete-char 1)
+		 (insert " ")
+		 (setcdr (assq :marked-for-purging backups-mode-data-alist)
+			 (delq index marked))
+		 (beginning-of-line))
+	     (progn
+	       (beginning-of-line)
+	       (insert "p")
+	       (delete-char 1)
+	       (setcdr (assq :marked-for-purging backups-mode-data-alist)
+		       (push index marked))
+	       (forward-line)))
+	   (set-buffer-modified-p nil))
+	  (t
+	   (princ bm-no-file-message)))))
+
+(defun purge-backups ()
+  "Purge (delete) backups"
+  (interactive)
+  (let ((marked (bm-get-marked-for-purging backups-mode-data-alist)))
+    (cond ((zerop (length marked))
+	   (princ "No backups marked to purge"))
+	  ((y-or-n-p "Purge the marked backups")
+	   (mapc
+	    (lambda (index)
+	      (let* ((file-name (bm-get-file-name-from-index index))
+		     (buf (get-file-buffer file-name)))
+		(when (buffer-live-p buf)
+		  (kill-buffer buf))
+		(delete-file file-name)))
+	    marked)
+	   (list-backups-from-file (bm-get-original-file backups-mode-data-alist)
+				   :data backups-mode-data-alist)))))
 
 ;; also require lewang's backup-walker if it exists
 (require 'backup-walker nil 'noerror)

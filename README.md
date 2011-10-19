@@ -90,6 +90,10 @@ While in the backups-mode buffer, these are the commands:
  * This is done by aligning the cursor to a file's line, and typing "d". This will mark that line as first file to diff. 
  * Then, you align the cursor to another file's line and type "d". This will run the "diff-function" command on the two selected files.
  
+* Purge (delete) Backups
+ * This is similar to Dired mode's batch delete, except Backups Mode uses "p" instead of "d" to mark backups for deletion. The choice of letters is because "d" is already being used to diff backups.
+ * After marking one-to-many backups, "x" deletes all the marked backups.
+ 
 ## Backup Walker
 I've adapted lewang's [backup-walker](https://github.com/lewang/backup-walker) project. Backup Walker gives you a different view on your backups. Whereas Backups Mode lists all of your backups, Backup Walker starts with a diff of the current file and the previous backup. You can then sequentially move through diffs of consecutive backup files. Often, if you know what you are looking for, Backup Walker can be more efficient than Backups Mode.
 
@@ -115,7 +119,6 @@ I use rsnapshot for rsync backups to an external drive. I've decided I do not ca
 ## Bugs and TODOs
 As with most projects, this is still a work in progress. The known issues are:
 
-* I would like to add functionality to delete backup(s) as like in Dired mode.
 * I am planning on adapting this project to work with git-mode work-in-progress backups (WIP).
 * A [bug](https://github.com/chadbraunduin/backups-mode/issues/1) using this on Mac Os X has been reported. This is related to use the function copy-file. 
 * I have not tested it in Windows, yet. I believe configuration changes will be necessary to make it work in that environment. Since I only use emacs in Linux, this is not a personal priority for me.
