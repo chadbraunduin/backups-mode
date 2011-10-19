@@ -119,6 +119,7 @@ I use rsnapshot for rsync backups to an external drive. I've decided I do not ca
 ## Bugs and TODOs
 As with most projects, this is still a work in progress. The known issues are:
 
+* I would like to add functionality to delete backup(s) as like in Dired mode.
 * I am planning on adapting this project to work with git-mode work-in-progress backups (WIP).
 * A [bug](https://github.com/chadbraunduin/backups-mode/issues/1) using this on Mac Os X has been reported. This is related to use the function copy-file. 
 * I have not tested it in Windows, yet. I believe configuration changes will be necessary to make it work in that environment. Since I only use emacs in Linux, this is not a personal priority for me.
