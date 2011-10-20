@@ -120,7 +120,7 @@
   (if backup-walker-minor-mode
       (let ((index (cdr (assq :index backup-walker-data-alist)))
             (suffixes (cdr (assq :backup-suffix-list backup-walker-data-alist))))
-	(setq header-line-format (backup-walker-get-key-help-common index suffixes (concat "current: " (propertize (int-to-string
+	(setq header-line-format (backup-walker-get-key-help-common index suffixes (concat "viewing " (propertize (int-to-string
 														    (backup-walker-get-version
 														     (nth index suffixes)))
 														   'face 'font-lock-keyword-face)
@@ -138,8 +138,7 @@
 
 (add-minor-mode 'backup-walker-minor-mode " walker" nil nil nil)
 
-(defvar backup-walker-data-alist nil
-  "")
+(defvar backup-walker-data-alist nil "")
 (make-variable-buffer-local 'backup-walker-data-alist)
 
 (defsubst backup-walker-get-version (fn &optional start)
@@ -154,7 +153,10 @@
 (defsubst backup-walker-get-key-help-common (index suffixes current-file-string)
   (concat
    (if (eq index 0)
-       ""
+       (if (eq major-mode 'backup-walker-mode)
+	   (concat (propertize "current" 'face 'font-lock-keyword-face)
+		", ")
+	 "")
      (concat (propertize "<n> " 'face 'italic)
 	     (propertize (int-to-string (backup-walker-get-version (nth (1- index) suffixes)))
                          'face 'font-lock-keyword-face)
@@ -183,7 +185,7 @@
    (backup-walker-minor-mode
     (let* ((prefix (cdr (assq :backup-prefix backup-walker-data-alist)))
            (file-name (concat prefix (nth new-index suffixes)))
-           (alist backup-walker-data-alist)
+           (alist (copy-alist backup-walker-data-alist))
            (buf (find-file-noselect file-name)))
       (setcdr (assq :index alist) new-index)
       (with-current-buffer buf
@@ -337,7 +339,7 @@ with ARG move ARG times"
          (prefix (cdr (assq :backup-prefix backup-walker-data-alist)))
          (file-name (concat prefix (nth index suffixes)))
          (walking-buf (current-buffer))
-         (alist backup-walker-data-alist)
+         (alist (copy-alist backup-walker-data-alist))
          (buf (find-file-noselect file-name)))
     (with-current-buffer buf
       (setq backup-walker-data-alist alist)

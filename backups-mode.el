@@ -173,7 +173,7 @@ are saved automatically when they are killed"
   (if (assq :second-config data)
       (setcdr (assq :second-config data) second-config)
     (push `(:second-config . ,second-config) data))
-  
+
   (make-variable-buffer-local 'backups-mode-data-alist)
   (setq backups-mode-data-alist data)
 
@@ -286,7 +286,7 @@ this will close backups-mode and move the user back to the current file."
 (defun bm-open-file-read-only (filename)
   (setq ro-buffer (find-file-noselect filename))
   (setq current-config (current-window-configuration))
-  (let* ((orig-data backups-mode-data-alist)
+  (let* ((orig-data (copy-alist backups-mode-data-alist))
 	 (buffers-opened (bm-get-buffers-opened orig-data)))
     (bm-switch-to-window ro-buffer 'backups-minor-mode-p)
     (view-backup-mode t)
@@ -378,7 +378,7 @@ the chosen backup."
   (setq current-config (current-window-configuration))
   (with-current-buffer diff-buffer
     (diff-backup-mode t)) ;; must set minor mode before switching to diff buffer
-  (let* ((orig-data backups-mode-data-alist)
+  (let* ((orig-data (copy-alist backups-mode-data-alist))
 	 (buffers-opened (bm-get-buffers-opened orig-data)))
     (bm-switch-to-window diff-buffer 'backups-minor-mode-p)
     (push `(:first-file-name . ,first-file-name) orig-data)
