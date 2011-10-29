@@ -286,10 +286,10 @@ this will close backups-mode and move the user back to the current file."
 (defun bm-open-file-read-only (filename)
   (setq ro-buffer (find-file-noselect filename))
   (setq current-config (current-window-configuration))
-  (let* ((orig-data (copy-alist backups-mode-data-alist))
-	 (buffers-opened (bm-get-buffers-opened orig-data)))
+  (let* ((orig-data (copy-alist backups-mode-data-alist)))
     (bm-switch-to-window ro-buffer 'backups-minor-mode-p)
     (view-backup-mode t)
+    (bm-rename-buffer filename backups-mode-data-alist)
     (setq backups-mode-data-alist orig-data)
     (setq header-line-format (format "<d> diff with current, <R> revert, <q> quit"))))
 
@@ -378,8 +378,7 @@ the chosen backup."
   (setq current-config (current-window-configuration))
   (with-current-buffer diff-buffer
     (diff-backup-mode t)) ;; must set minor mode before switching to diff buffer
-  (let* ((orig-data (copy-alist backups-mode-data-alist))
-	 (buffers-opened (bm-get-buffers-opened orig-data)))
+  (let* ((orig-data (copy-alist backups-mode-data-alist)))
     (bm-switch-to-window diff-buffer 'backups-minor-mode-p)
     (push `(:first-file-name . ,first-file-name) orig-data)
     (push `(:second-file-name . ,second-file-name) orig-data)

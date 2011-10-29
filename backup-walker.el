@@ -191,7 +191,8 @@
       (with-current-buffer buf
         (setq backup-walker-data-alist alist)
         (backup-walker-minor-mode 1))
-      (set-window-buffer nil buf)))))
+      (switch-to-buffer buf)
+      (bm-rename-buffer file-name backup-walker-data-alist)))))
 
 (defun backup-walker-get-sorted-backups (filename)
   "Return version sorted list of backups of the form:
@@ -266,7 +267,6 @@ with universal arg, ask for a file-name."
                (not (eq version-control 'never)))
     (error "version-control must be enabled for backup-walker to function."))
   (let ((first-config (current-window-configuration))
-	(buffers-opened (bm-get-buffers-opened data))
 	(backups (backup-walker-get-sorted-backups original-file))
 	buf)
     
@@ -344,7 +344,8 @@ with ARG move ARG times"
     (with-current-buffer buf
       (setq backup-walker-data-alist alist)
       (backup-walker-minor-mode 1))
-    (bm-switch-to-window buf 'backups-minor-mode-p)))
+    (bm-switch-to-window buf 'backups-minor-mode-p)
+    (bm-rename-buffer file-name backup-walker-data-alist)))
 
 (defun backup-walker-blame (line)
   "find out where a certain line came into existance

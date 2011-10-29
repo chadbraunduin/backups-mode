@@ -160,6 +160,11 @@
     (diff old new switches no-async))
   (get-buffer-create "*Diff*"))
 
+(defun bm-rename-buffer (filename data)
+  (rename-buffer (concat (file-name-nondirectory (bm-get-original-file data))
+			 " "
+			 (number-to-string (bm-make-version-number filename)))))
+
 ;;; variables common to both backups-mode and backup-walker
 ;; minor mode variables
 (defvar backup-walker-minor-mode nil "non-nil if backup walker minor mode is enabled")
