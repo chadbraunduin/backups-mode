@@ -289,7 +289,7 @@ this will close backups-mode and move the user back to the current file."
   (let* ((orig-data (copy-alist backups-mode-data-alist)))
     (bm-switch-to-window ro-buffer 'backups-minor-mode-p)
     (view-backup-mode t)
-    (bm-rename-buffer filename backups-mode-data-alist)
+    (bm-rename-buffer filename orig-data)
     (setq backups-mode-data-alist orig-data)
     (setq header-line-format (format "<d> diff with current, <R> revert, <q> quit"))))
 
