@@ -433,7 +433,14 @@ the chosen backup."
 				   :data backups-mode-data-alist)))))
 
 ;; also require lewang's backup-walker if it exists
-(require 'backup-walker nil 'noerror)
+;; use the most up-to-date version first
+;; fallback to a bundled version
+(or (require 'backup-walker nil 'noerror)
+	(let ((load-path
+		   (cons (expand-file-name "fallback"
+								   (file-name-directory load-file-name))
+				 load-path)))
+	  (require 'backup-walker)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; backups-mode.el ends here
