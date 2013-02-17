@@ -97,6 +97,8 @@ While in the backups-mode buffer, these are the commands:
 ## Backup Walker
 I've adapted lewang's [backup-walker](https://github.com/lewang/backup-walker) project. Backup Walker gives you a different view on your backups. Whereas Backups Mode lists all of your backups, Backup Walker starts with a diff of the current file and the previous backup. You can then sequentially move through diffs of consecutive backup files. Often, if you know what you are looking for, Backup Walker can be more efficient than Backups Mode.
 
+My adapted version of backup-walker is found in the "fallback" directory. Backups-mode will only use that version if it cannot find another version of backup-walker in your load-path. So a more up-to-date version will override what I have saved as a fallback.
+
 ## Cleanup
 The problem with creating N backup files per file is that over time you'll have generated a lot of backup files. Some of these backup files may even be orphaned if the original file is moved or deleted. I've taken two approaches for this problem:
 
