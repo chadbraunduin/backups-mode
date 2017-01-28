@@ -157,8 +157,9 @@
 
 (defun diff-no-select (old new &optional switches no-async)
   (save-window-excursion
-    (diff old new switches no-async))
-  (get-buffer-create "*Diff*"))
+    (ediff old new switches))
+  ;; (get-buffer-create "*Diff*")
+  )
 
 (defun bm-rename-buffer (filename data)
   (rename-buffer (concat (file-name-nondirectory (bm-get-original-file data))

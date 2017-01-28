@@ -87,58 +87,62 @@
 (defvar unknown-last-modified-date "date:") ;; platform specific output for unknown last modified date
 (defvar backup-files-function 'bm-backup-files)
 
-(defun backups-mode-start ()
+(define-minor-mode backups-mode-start
   "Turns on emacs backups and keybindings to access the backups"
-  (interactive)
-  (global-set-key "\C-cv" 'save-version)
-  (global-set-key "\C-cb" 'list-backups)
-  (global-set-key "\C-ck" 'kill-buffer-prompt)
-  (when (backup-walker-p) (global-set-key "\C-cw" 'backup-walker-start))
+  ""
+  :lighter " backups"
+  :global t
+  :keymap (let ((map (make-sparse-keymap)))
+            (define-key map (kbd "C-c v") 'save-version)
+            (define-key map (kbd "C-c b") 'list-backups)
+            (define-key map (kbd "C-c k") 'kill-buffer-prompt)
+            (when (backup-walker-p) (define-key map (kbd "C-c w") 'backup-walker-start))
+            map))
 
-  ;; autosave configuration section
-  (defvar emacs-directory "~/.emacs.d/")
+;; autosave configuration section
+(defvar emacs-directory "~/.emacs.d/")
 
-  (defvar backup-directory (concat emacs-directory "backups/"))
-  (make-directory backup-directory t)
-  (setq backup-directory-alist `((".*" . ,backup-directory)))
-  (setq auto-save-list-file-prefix (concat backup-directory ".auto-saves-"))
-  (setq auto-save-file-name-transforms `((".*" ,backup-directory t)))
+(defvar backup-directory (concat emacs-directory "backups/"))
+(make-directory backup-directory t)
+(setq backup-directory-alist `((".*" . ,backup-directory)))
+(setq auto-save-list-file-prefix (concat backup-directory ".auto-saves-"))
+(setq auto-save-file-name-transforms `((".*" ,backup-directory t)))
 
-  (defvar tramp-backup-directory (concat emacs-directory "tramp-backups/"))
-  (make-directory tramp-backup-directory t)
-  (setq tramp-backup-directory-alist `((".*" . ,tramp-backup-directory)))
+(defvar tramp-backup-directory (concat emacs-directory "tramp-backups/"))
+(make-directory tramp-backup-directory t)
+(setq tramp-backup-directory-alist `((".*" . ,tramp-backup-directory)))
 
-  ;; this next line turns on emacs version control with backups
-  (setq backup-by-copying t
-	delete-old-versions t
-	kept-new-versions 6
-	kept-old-versions 2
-	version-control t)
+;; this next line turns on emacs version control with backups
+(setq backup-by-copying t
+      delete-old-versions t
+      kept-new-versions 6
+      kept-old-versions 2
+      version-control t)
 
-  (defadvice kill-buffer (around kill-buffer)
-    "Always save before killing a file buffer"
-    (when (and (buffer-modified-p)
-	       (buffer-file-name)
-	       (file-exists-p (buffer-file-name)))
-      (save-buffer))
-    ad-do-it)
-  (ad-activate 'kill-buffer)
+(defadvice kill-buffer (around kill-buffer)
+  "Always save before killing a file buffer"
+  (when (and (buffer-modified-p)
+	     (buffer-file-name)
+	     (file-exists-p (buffer-file-name)))
+    (save-buffer))
+  ad-do-it)
+(ad-activate 'kill-buffer)
 
-  (defadvice save-buffers-kill-emacs (around save-buffers-kill-emacs)
-    "Always save before killing emacs"
-    (save-some-buffers t)
-    ad-do-it)
-  (ad-activate 'save-buffers-kill-emacs)
+(defadvice save-buffers-kill-emacs (around save-buffers-kill-emacs)
+  "Always save before killing emacs"
+  (save-some-buffers t)
+  ad-do-it)
+(ad-activate 'save-buffers-kill-emacs)
 
-  (defun kill-buffer-prompt ()
-    "Allows one to kill a buffer without saving it.
+(defun kill-buffer-prompt ()
+  "Allows one to kill a buffer without saving it.
 This is necessary since once you start backups-mode all file based buffers
 are saved automatically when they are killed"
-    (interactive)
-    (if (and (buffer-modified-p) (buffer-file-name) (file-exists-p (buffer-file-name)) (y-or-n-p "Save buffer?"))
-	(save-buffer)
-      (set-buffer-modified-p nil))
-    (kill-buffer)))
+  (interactive)
+  (if (and (buffer-modified-p) (buffer-file-name) (file-exists-p (buffer-file-name)) (y-or-n-p "Save buffer?"))
+      (save-buffer)
+    (set-buffer-modified-p nil))
+  (kill-buffer))
 
 ;; commands you can run from any file
 (defun save-version ()
@@ -436,11 +440,11 @@ the chosen backup."
 ;; use the most up-to-date version first
 ;; fallback to a bundled version
 (or (require 'backup-walker nil 'noerror)
-	(let ((load-path
-		   (cons (expand-file-name "fallback"
-								   (file-name-directory load-file-name))
-				 load-path)))
-	  (require 'backup-walker)))
+    (let ((load-path
+	   (cons (expand-file-name "fallback"
+				   (file-name-directory load-file-name))
+		 load-path)))
+      (require 'backup-walker)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; backups-mode.el ends here
