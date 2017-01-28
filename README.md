@@ -25,7 +25,7 @@ Using the emacs version control functionality should not be a replacement for a 
     # this assumes ~/.emacs.d/ is in your emacs load-path
     # add the following to .emacs
     (require 'backups-mode)
-    (backups-mode-start)
+    (backups-minor-mode)
 
 ## Additional configuration
     ;; putting this in your .emacs will allow you to change version control settings. The following are the default settings found in backups-mode.el.
@@ -47,13 +47,29 @@ By default, backups are saved to "~/.emacs.d/backups" and tramp file backups are
 * backup-directory
 * tramp-backup-directory
 
+### Key mapping
+The backups-minor-mode keymap is defined in variable named backups-minor-mode-keymap. So you can make individual key changes like so:
+
+    (define-key backups-minor-mode-keymap (kbd "C-c b") nil)
+    (define-key backups-minor-mode-keymap (kbd "C-c l") 'list-backups)
+	
+Or redifine the entire keymap like so:
+
+	(setq backups-minor-mode-keymap (let ((map (make-sparse-keymap)))
+				    (define-key map (kbd "C-c sv") 'save-version)
+				    (define-key map (kbd "C-c lb") 'list-backups)
+				    (define-key map (kbd "C-c kb") 'kill-buffer-prompt)
+				    (when (backup-walker-p)
+				      (define-key map (kbd "C-c bw") 'backup-walker-start))
+				    map))
+
 ### My .emacs
 As an example, here's the configuration from my .emacs file.
 
     (require 'backups-mode)
     (defvar backup-directory "~/.emacs-backups/backups/")
     (defvar tramp-backup-directory "~/.emacs-backups/tramp-backups/")
-    (backups-mode-start)
+    (backups-minor-mode)
     ;; keep all versions forever
     (setq delete-old-versions 1)
 

@@ -36,7 +36,7 @@
 ;;  # this assumes ~/.emacs.d/ is in your emacs load-path
 ;;  # add the following to .emacs
 ;;  (require 'backups-mode)
-;;  (backups-mode-start)
+;;  (backups-minor-mode)
 
 ;;; Addtional Configuration
 ;;   putting this in your .emacs will allow you to change version control settings. These are the default settings found in backups-mode.el.
@@ -52,7 +52,7 @@
 ;;   (require 'backups-mode)
 ;;   (defvar backup-directory "~/.emacs-backups/backups/")
 ;;   (defvar tramp-backup-directory "~/.emacs-backups/tramp-backups/")
-;;   (backups-mode-start)
+;;   (backups-minor-mode)
 ;;   keep all versions forever
 ;;   (setq delete-old-versions 1)
 
@@ -87,17 +87,20 @@
 (defvar unknown-last-modified-date "date:") ;; platform specific output for unknown last modified date
 (defvar backup-files-function 'bm-backup-files)
 
-(define-minor-mode backups-mode-start
+(defvar backups-minor-mode-keymap (let ((map (make-sparse-keymap)))
+				    (define-key map (kbd "C-c v") 'save-version)
+				    (define-key map (kbd "C-c b") 'list-backups)
+				    (define-key map (kbd "C-c k") 'kill-buffer-prompt)
+				    (when (backup-walker-p)
+				      (define-key map (kbd "C-c w") 'backup-walker-start))
+				    map))
+
+(define-minor-mode backups-minor-mode
   "Turns on emacs backups and keybindings to access the backups"
   ""
   :lighter " backups"
   :global t
-  :keymap (let ((map (make-sparse-keymap)))
-            (define-key map (kbd "C-c v") 'save-version)
-            (define-key map (kbd "C-c b") 'list-backups)
-            (define-key map (kbd "C-c k") 'kill-buffer-prompt)
-            (when (backup-walker-p) (define-key map (kbd "C-c w") 'backup-walker-start))
-            map))
+  :keymap backups-minor-mode-keymap)
 
 ;; autosave configuration section
 (defvar emacs-directory "~/.emacs.d/")
